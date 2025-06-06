@@ -1,0 +1,34 @@
+name: kasirgo_mobile
+description: KasirGo F&B Point of Sale Mobile Application
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # GetX for state management and navigation
+  get: ^4.6.6
+  get_storage: ^2.1.1
+  
+  # UI Components
+  cupertino_icons: ^1.0.2
+  
+  # Charts
+  syncfusion_flutter_charts: ^24.1.41
+  
+  # Utilities
+  intl: ^0.18.1
+  
+  # Printer (placeholder - use actual IMIN SDK)
+  # imin_printer: ^latest_version
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

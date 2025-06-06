@@ -1,0 +1,375 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../controllers/product_controller.dart';
+import '../../controllers/cart_controller.dart';
+import '../../core/utils/currency_formatter.dart';
+import '../../data/models/cart_item_model.dart';
+import '../../data/models/product_model.dart';
+import '../../routes/app_pages.dart';
+
+class PosView extends GetView<ProductController> {
+  final CartController cartController = Get.find();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Point of Sale'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: () => _showSKUScanner(context),
+          ),
+        ],
+      ),
+      body: Row(
+        children: [
+          // Product Section
+          Expanded(
+            flex: 3,
+            child: Column(
+              children: [
+                // Search Bar
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cari produk...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon:
+                          Obx(() => controller.searchQuery.value.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () =>
+                                      controller.setSearchQuery(''),
+                                )
+                              : const SizedBox()),
+                    ),
+                    onChanged: controller.setSearchQuery,
+                  ),
+                ),
+
+                // Category Tabs
+                Container(
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Obx(() => ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: const Text('Semua'),
+                              selected:
+                                  controller.selectedCategory.value == null,
+                              onSelected: (_) =>
+                                  controller.selectCategory(null),
+                            ),
+                          ),
+                          ...controller.categories.map((category) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text(category.name ?? ''),
+                                  selected:
+                                      controller.selectedCategory.value?.id ==
+                                          category.id,
+                                  onSelected: (_) =>
+                                      controller.selectCategory(category),
+                                ),
+                              )),
+                        ],
+                      )),
+                ),
+
+                // Product Grid
+                Expanded(
+                  child: Obx(() => controller.isLoading.value
+                      ? const Center(child: CircularProgressIndicator())
+                      : GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 0.8,
+                          ),
+                          itemCount: controller.filteredProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = controller.filteredProducts[index];
+                            return _buildProductCard(product);
+                          },
+                        )),
+                ),
+              ],
+            ),
+          ),
+
+          // Cart Section
+          Container(
+            width: 400,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Cart Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Theme.of(context).primaryColor,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Keranjang',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Obx(() => Text(
+                            '${cartController.totalItems} item',
+                            style: const TextStyle(color: Colors.white),
+                          )),
+                    ],
+                  ),
+                ),
+
+                // Cart Items
+                Expanded(
+                  child: Obx(() => cartController.cartItems.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Keranjang kosong',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: cartController.cartItems.length,
+                          itemBuilder: (context, index) {
+                            final item = cartController.cartItems[index];
+                            return _buildCartItem(item, index);
+                          },
+                        )),
+                ),
+
+                // Cart Summary
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    border: Border(
+                      top: BorderSide(color: Colors.grey[300]!),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Obx(() => _buildSummaryRow(
+                            'Subtotal',
+                            CurrencyFormatter.formatRupiah(
+                                cartController.subtotal),
+                          )),
+                      const SizedBox(height: 8),
+                      Obx(() => _buildSummaryRow(
+                            'PPN 11%',
+                            CurrencyFormatter.formatRupiah(cartController.tax),
+                          )),
+                      const Divider(),
+                      Obx(() => _buildSummaryRow(
+                            'Total',
+                            CurrencyFormatter.formatRupiah(
+                                cartController.total),
+                            isTotal: true,
+                          )),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: cartController.cartItems.isEmpty
+                              ? null
+                              : () => Get.toNamed(Routes.PAYMENT),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text(
+                            'Lanjut ke Pembayaran',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductCard(ProductModel product) {
+    return InkWell(
+      onTap: () => cartController.addToCart(product),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(8),
+                  ),
+                ),
+                child: product.image != null
+                    ? Image.network(
+                        product.image!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.fastfood, size: 40),
+                      )
+                    : const Icon(Icons.fastfood, size: 40),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name ?? '',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    CurrencyFormatter.formatRupiah(product.price ?? 0),
+                    style: TextStyle(
+                      color: Theme.of(Get.context!).primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCartItem(CartItemModel item, int index) {
+    return ListTile(
+      title: Text(item.productName ?? ''),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(CurrencyFormatter.formatRupiah(item.price ?? 0)),
+          if (item.modifiers != null && item.modifiers!.isNotEmpty)
+            ...item.modifiers!.map((mod) => Text(
+                  '+ ${mod.name} (${CurrencyFormatter.formatRupiah(mod.price ?? 0)})',
+                  style: const TextStyle(fontSize: 12),
+                )),
+          if (item.notes != null && item.notes!.isNotEmpty)
+            Text(
+              'Catatan: ${item.notes}',
+              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            ),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: () => cartController.updateQuantity(
+              index,
+              (item.quantity ?? 1) - 1,
+            ),
+          ),
+          Text('${item.quantity}'),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () => cartController.updateQuantity(
+              index,
+              (item.quantity ?? 1) + 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            fontSize: isTotal ? 18 : 14,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            fontSize: isTotal ? 18 : 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSKUScanner(BuildContext context) {
+    final skuController = TextEditingController();
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Scan SKU'),
+        content: TextField(
+          controller: skuController,
+          decoration: const InputDecoration(
+            labelText: 'SKU Produk',
+            hintText: 'Masukkan atau scan SKU',
+          ),
+          autofocus: true,
+          onSubmitted: (value) {
+            Get.back();
+            controller.searchProductBySKU(value);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              controller.searchProductBySKU(skuController.text);
+            },
+            child: const Text('Cari'),
+          ),
+        ],
+      ),
+    );
+  }
+}
