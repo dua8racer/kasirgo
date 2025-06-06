@@ -2,13 +2,11 @@ import 'package:get/get.dart';
 import '../data/models/transaction_model.dart';
 import '../data/services/transaction_service.dart';
 import 'cart_controller.dart';
-import 'auth_controller.dart';
 import 'session_controller.dart';
 
 class TransactionController extends GetxController {
   final TransactionService _transactionService = Get.put(TransactionService());
   final CartController _cartController = Get.find();
-  final AuthController _authController = Get.find();
   final SessionController _sessionController = Get.find();
 
   final isLoading = false.obs;
@@ -36,7 +34,7 @@ class TransactionController extends GetxController {
         'customer_name': _cartController.customerName.value,
         'items':
             _cartController.cartItems.map((item) => item.toJson()).toList(),
-        'tax_id': '1', // Default tax ID
+        'tax_id': null, // Default tax ID
         'payment_method': paymentMethod,
         'amount_received': amountReceived,
         'notes': _cartController.notes.value,
@@ -48,14 +46,12 @@ class TransactionController extends GetxController {
       if (response.statusCode == 201) {
         final transaction = TransactionModel.fromJson(response.body);
         todayTransactions.add(transaction);
-
         Get.snackbar(
           'Berhasil',
           'Transaksi berhasil dibuat',
           backgroundColor: Get.theme.primaryColor,
           colorText: Get.theme.colorScheme.onPrimary,
         );
-
         // Clear cart
         _cartController.clearCart();
 

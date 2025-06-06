@@ -12,7 +12,7 @@ class CartController extends GetxController {
   }
 
   double get tax {
-    return subtotal * 0.11; // 11% PPN
+    return subtotal * 0; //* 0.11; // 11% PPN
   }
 
   double get total {

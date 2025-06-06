@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"kasirgo-backend/config"
 	"kasirgo-backend/models"
 	"kasirgo-backend/repositories"
 	"strconv"
@@ -32,7 +33,7 @@ type CreateTransactionInput struct {
 	CustomerName   string                  `json:"customer_name"`
 	Items          []CreateTransactionItem `json:"items"`
 	DiscountID     *string                 `json:"discount_id"`
-	TaxID          string                  `json:"tax_id"`
+	TaxID          *string                 `json:"tax_id"`
 	PaymentMethod  string                  `json:"payment_method"`
 	AmountReceived float64                 `json:"amount_received"`
 	Notes          string                  `json:"notes"`
@@ -91,18 +92,55 @@ func (s *TransactionService) CreateTransaction(input CreateTransactionInput) (*m
 		}
 	}
 
-	// Calculate tax
-	taxAmount := subtotal * 0.11 // Default 11% tax
+	// Handle tax - IMPORTANT: Ensure nil handling
+	var taxAmount float64
+	var taxID *string = nil // Explicitly set to nil
+
+	// Check if tax_id is provided and not empty
+	if input.TaxID != nil && *input.TaxID != "" {
+		// Verify the tax exists
+		var tax models.Tax
+		if err := config.DB.First(&tax, "id = ?", *input.TaxID).Error; err == nil {
+			taxID = &tax.ID
+			taxAmount = subtotal * (tax.Percentage / 100)
+		} else {
+			// Tax ID provided but not found - use default
+			fmt.Printf("Warning: Tax ID %s not found, using default\n", *input.TaxID)
+		}
+	}
+
+	// If no valid tax_id yet, try to find default active tax
+	if taxID == nil {
+		var tax models.Tax
+		if err := config.DB.First(&tax, "is_active = ?", true).Error; err == nil {
+			taxID = &tax.ID
+			taxAmount = subtotal * (tax.Percentage / 100)
+		}
+		// If still no tax found, taxID remains nil
+	}
 
 	// Calculate discount
 	var discountAmount float64
-	if input.DiscountID != nil {
-		// TODO: Implement discount calculation
+	var discountID *string = nil // Explicitly set to nil
+
+	if input.DiscountID != nil && *input.DiscountID != "" {
+		var discount models.Discount
+		if err := config.DB.First(&discount, "id = ?", *input.DiscountID).Error; err == nil {
+			discountID = &discount.ID
+			if discount.Type == "percentage" {
+				discountAmount = subtotal * (discount.Value / 100)
+				if discount.MaxDiscount > 0 && discountAmount > discount.MaxDiscount {
+					discountAmount = discount.MaxDiscount
+				}
+			} else if discount.Type == "fixed" {
+				discountAmount = discount.Value
+			}
+		}
 	}
 
 	total := subtotal + taxAmount - discountAmount
 
-	// Create transaction
+	// Create transaction with explicit field setting
 	transaction := &models.Transaction{
 		StoreID:        input.StoreID,
 		SessionID:      input.SessionID,
@@ -110,14 +148,20 @@ func (s *TransactionService) CreateTransaction(input CreateTransactionInput) (*m
 		QueueNumber:    queueNumber,
 		CustomerName:   input.CustomerName,
 		Subtotal:       subtotal,
-		DiscountID:     input.DiscountID,
 		DiscountAmount: discountAmount,
-		TaxID:          input.TaxID,
 		TaxAmount:      taxAmount,
 		Total:          total,
 		Status:         "completed",
 		Notes:          input.Notes,
 		Items:          items,
+	}
+
+	// Only set IDs if they are not nil
+	if discountID != nil {
+		transaction.DiscountID = discountID
+	}
+	if taxID != nil {
+		transaction.TaxID = taxID
 	}
 
 	// Create payment
@@ -134,8 +178,12 @@ func (s *TransactionService) CreateTransaction(input CreateTransactionInput) (*m
 		Status:         "success",
 	}
 
+	// Debug log
+	fmt.Printf("Creating transaction with TaxID: %v\n", transaction.TaxID)
+
 	err := s.transRepo.Create(transaction)
 	if err != nil {
+		fmt.Printf("Error creating transaction: %v\n", err)
 		return nil, err
 	}
 

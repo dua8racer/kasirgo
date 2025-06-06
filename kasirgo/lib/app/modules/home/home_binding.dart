@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import '../../controllers/auth_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../../controllers/product_controller.dart';
 import '../../controllers/cart_controller.dart';
@@ -12,5 +11,6 @@ class HomeBinding extends Bindings {
     Get.lazyPut<ProductController>(() => ProductController());
     Get.lazyPut<CartController>(() => CartController());
     Get.lazyPut<TransactionController>(() => TransactionController());
+    // Get.lazyPut<AuthController>(() => AuthController());
   }
 }

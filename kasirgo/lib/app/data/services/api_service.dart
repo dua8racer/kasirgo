@@ -10,7 +10,7 @@ class ApiService extends GetConnect {
     // For Android Emulator use: http://10.0.2.2:8080
     // For iOS Simulator use: http://localhost:8080
     // For Physical Device use: http://YOUR_COMPUTER_IP:8080
-    httpClient.baseUrl = 'http://192.168.2.16:8080/api/v1';
+    httpClient.baseUrl = 'http://192.168.2.2:8080/api/v1';
 
     httpClient.defaultContentType = "application/json";
     httpClient.timeout = const Duration(seconds: 30);

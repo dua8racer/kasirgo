@@ -5,5 +5,6 @@ class PaymentBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<TransactionController>(() => TransactionController());
+    // Get.lazyPut<AuthController>(() => AuthController());
   }
 }

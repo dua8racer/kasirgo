@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:kasirgo_mobile/app/modules/transaction/transaction_binding.dart';
 import '../modules/login/login_binding.dart';
 import '../modules/login/login_view.dart';
 import '../modules/home/home_binding.dart';
@@ -53,6 +54,7 @@ class AppPages {
     GetPage(
       name: _Paths.TRANSACTION_HISTORY,
       page: () => TransactionHistoryView(),
+      binding: TransactionBinding(),
     ),
   ];
 }
