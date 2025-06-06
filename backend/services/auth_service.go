@@ -31,7 +31,7 @@ func (s *AuthService) Login(username, password string) (*models.User, string, er
 		return nil, "", errors.New("user is inactive")
 	}
 
-	token, err := utils.GenerateJWT(user.ID, user.Role)
+	token, err := utils.GenerateJWT(user.ID, user.Role, user.StoreID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -53,7 +53,7 @@ func (s *AuthService) LoginWithPIN(username, pin string) (*models.User, string, 
 		return nil, "", errors.New("user is inactive")
 	}
 
-	token, err := utils.GenerateJWT(user.ID, user.Role)
+	token, err := utils.GenerateJWT(user.ID, user.Role, user.StoreID)
 	if err != nil {
 		return nil, "", err
 	}

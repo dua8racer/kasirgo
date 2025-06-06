@@ -42,9 +42,11 @@ class SessionController extends GetxController {
           colorText: Get.theme.colorScheme.onPrimary,
         );
       } else {
+        print(response.body['error']);
         Get.snackbar('Error', response.body['error'] ?? 'Gagal memulai sesi');
       }
     } catch (e) {
+      print(e);
       Get.snackbar('Error', 'Terjadi kesalahan: $e');
     } finally {
       isLoading.value = false;

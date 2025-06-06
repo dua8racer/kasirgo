@@ -31,7 +31,9 @@ class AuthController extends GetxController {
       final userData = box.read('user');
       if (userData != null) {
         currentUser.value = UserModel.fromJson(userData);
-        Get.offAllNamed(Routes.HOME);
+        Future.delayed(Duration.zero, () {
+          Get.offAllNamed(Routes.HOME);
+        });
       }
     }
   }
@@ -53,6 +55,8 @@ class AuthController extends GetxController {
         usernameController.text,
         passwordController.text,
       );
+
+      print(response.body);
 
       if (response.statusCode == 200) {
         final data = response.body;

@@ -23,10 +23,11 @@ func getJWTSecret() []byte {
 	return []byte(secret)
 }
 
-func GenerateJWT(userID, role string) (string, error) {
+func GenerateJWT(userID, role, storeID string) (string, error) {
 	claims := &Claims{
-		UserID: userID,
-		Role:   role,
+		UserID:  userID,
+		Role:    role,
+		StoreID: storeID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 			IssuedAt:  time.Now().Unix(),
