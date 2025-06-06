@@ -21,6 +21,9 @@ dependencies:
   
   # Utilities
   intl: ^0.18.1
+
+  # Printer
+  print_bluetooth_thermal: ^1.1.6
   
   # Printer (placeholder - use actual IMIN SDK)
   # imin_printer: ^latest_version

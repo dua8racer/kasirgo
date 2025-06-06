@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../core/utils/currency_formatter.dart';
+import '../core/utils/printer_service.dart';
 import '../data/models/transaction_model.dart';
 import '../data/services/transaction_service.dart';
 import 'cart_controller.dart';
@@ -6,6 +9,7 @@ import 'session_controller.dart';
 
 class TransactionController extends GetxController {
   final TransactionService _transactionService = Get.put(TransactionService());
+  final PrinterService printerService = Get.find();
   final CartController _cartController = Get.find();
   final SessionController _sessionController = Get.find();
 
@@ -52,11 +56,41 @@ class TransactionController extends GetxController {
           backgroundColor: Get.theme.primaryColor,
           colorText: Get.theme.colorScheme.onPrimary,
         );
+
+        final printerService = Get.find<PrinterService>();
+        await printerService.printReceipt(transaction);
         // Clear cart
         _cartController.clearCart();
 
         // Return transaction for printing
-        Get.back(result: transaction);
+        Get.back();
+
+        Get.dialog(
+          AlertDialog(
+            title: const Text('Transaksi Berhasil'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('No. Antrian: ${transaction.queueNumber}'),
+                Text(
+                    'Total: ${CurrencyFormatter.formatRupiah(transaction.total ?? 0)}'),
+                const SizedBox(height: 16),
+                const Text('Struk sedang dicetak...'),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Get.back(); // Close dialog
+                  Get.offNamedUntil(
+                      '/pos', (route) => route.settings.name == '/home');
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+          barrierDismissible: false,
+        );
       } else {
         Get.snackbar(
             'Error', response.body['error'] ?? 'Gagal membuat transaksi');

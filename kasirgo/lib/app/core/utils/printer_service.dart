@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/transaction_model.dart';
 import 'currency_formatter.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
 class PrinterService extends GetxService {
   // This is a placeholder for IMIN printer integration
@@ -13,10 +16,17 @@ class PrinterService extends GetxService {
       final receipt = _formatReceipt(transaction);
 
       // TODO: Integrate with IMIN printer SDK
-      // For now, just print to console
-      print(receipt);
 
-      Get.snackbar('Info', 'Struk sedang dicetak...');
+      bool status = await PrintBluetoothThermal.isPermissionBluetoothGranted;
+      print("permission bluetooth granted: $status");
+
+      if (status == true) {
+        List<int> bytes = utf8.encode(receipt);
+        await PrintBluetoothThermal.writeBytes(bytes);
+        Get.snackbar('Info', 'Struk sedang dicetak...');
+      } else {
+        Get.snackbar('Info', 'Bluetooth tidak aktif...');
+      }
     } catch (e) {
       Get.snackbar('Error', 'Gagal mencetak struk: $e');
     }
@@ -28,7 +38,7 @@ class PrinterService extends GetxService {
     // Header
     buffer.writeln('================================');
     buffer.writeln('        KASIRGO F&B');
-    buffer.writeln('    Jl. Contoh No. 123');
+    buffer.writeln('    Jl. Tamansari Hive Office');
     buffer.writeln('     Tel: 021-1234567');
     buffer.writeln('================================');
     buffer.writeln();

@@ -566,7 +566,7 @@ class TransactionHistoryView extends GetView<TransactionController> {
               child: ElevatedButton.icon(
                 onPressed: () {
                   Get.back();
-                  Get.find<PrinterService>().printReceipt(transaction);
+                  controller.printerService.printReceipt(transaction);
                 },
                 icon: const Icon(Icons.print),
                 label: const Text('Cetak Struk'),
